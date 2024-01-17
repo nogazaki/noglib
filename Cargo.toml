@@ -1,0 +1,3 @@
+[workspace]
+members = ["buddy_allocator"]
+resolver = "2"
