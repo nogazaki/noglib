@@ -5,3 +5,7 @@ version = 3
 [[package]]
 name = "buddy_allocator"
 version = "0.1.0"
+
+[[package]]
+name = "mutex"
+version = "0.1.0"
