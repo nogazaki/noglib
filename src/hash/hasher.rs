@@ -14,6 +14,7 @@ pub trait HasherCore: DigestUser {
 }
 
 /// Wrapper around hashing types to truncate its output
+#[derive(Debug)]
 pub struct Hasher<Core: HasherCore, const DIGEST_SIZE_BIT: usize> {
     /// The hashing engine
     core: Core,
@@ -40,11 +41,11 @@ where
         *self = Self::new();
     }
 
-    fn update(mut self, data: &impl AsRef<[u8]>) -> Self {
+    fn update(mut self, data: &(impl AsRef<[u8]> + ?Sized)) -> Self {
         self.core.compress(data.as_ref());
         self
     }
-    fn update_in_place(&mut self, data: &impl AsRef<[u8]>) {
+    fn update_in_place(&mut self, data: &(impl AsRef<[u8]> + ?Sized)) {
         self.core.compress(data.as_ref());
     }
 

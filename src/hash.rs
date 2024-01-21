@@ -19,9 +19,9 @@ pub trait Digest: DigestUser {
 
     /// Update this instance using `data`, chain-able
     #[must_use]
-    fn update(self, data: &impl AsRef<[u8]>) -> Self;
+    fn update(self, data: &(impl AsRef<[u8]> + ?Sized)) -> Self;
     /// Update this instance in-place using `data`
-    fn update_in_place(&mut self, data: &impl AsRef<[u8]>);
+    fn update_in_place(&mut self, data: &(impl AsRef<[u8]> + ?Sized));
 
     /// Finalize and return digest, consume this instance
     fn digest(self) -> [u8; Self::DIGEST_SIZE];
@@ -42,3 +42,6 @@ pub trait Digest: DigestUser {
 /* -------------------------------------------------------------------------------- */
 
 mod hasher;
+
+mod sha1;
+pub use sha1::Sha1;

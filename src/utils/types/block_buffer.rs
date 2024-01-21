@@ -44,8 +44,13 @@ where
     }
 
     /// Set the pointer to the next unused byte of this buffer
-    fn set_pos_unchecked(&mut self, pos: usize) {
+    pub(crate) fn set_pos_unchecked(&mut self, pos: usize) {
         self.pos = pos;
+    }
+
+    /// Get reference to current buffer
+    pub(crate) fn get_mut_buf(&mut self) -> &mut [u8; BLOCK_SIZE] {
+        &mut self.buf
     }
 
     /// Parse a data slice, calling `processor` on the portion that fit into multiple blocks
