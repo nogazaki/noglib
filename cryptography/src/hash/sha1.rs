@@ -4,26 +4,26 @@ use super::hasher::{Hasher, HasherCore};
 use crate::hash::DigestUser;
 use crate::utils::{traits::BlockUser, types::BlockBuffer};
 
-/// SHA-1 block size in bits
+/// SHA-1 core block size in bits
 const BLOCK_SIZE_BIT: usize = 512;
-/// SHA-1 block size in bytes
+/// SHA-1 core block size in bytes
 const BLOCK_SIZE_BYTE: usize = BLOCK_SIZE_BIT >> 3;
 
-/// SHA-1 digest size in bits
+/// SHA-1 core digest size in bits
 const DIGEST_SIZE_BIT: usize = 160;
-/// SHA-1 digest size in bytes
+/// SHA-1 core digest size in bytes
 const DIGEST_SIZE_BYTE: usize = DIGEST_SIZE_BIT >> 3;
 
 /// SHA-1 core constants
-const K: [u32; 4] = [0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6];
+const K_CONSTANTS: [u32; 4] = [0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6];
 
 /// SHA-1 core functions
 macro_rules! sha1_functions {
     ($x:expr, $y:expr, $z:expr, $t:expr) => {
         match $t {
-            0..=19 => ($x & $y) ^ (!$x & $z),
+            0..=19 => $crate::utils::macros::choose!($x, $y, $z),
             20..=39 => $x ^ $y ^ $z,
-            40..=59 => ($x & $y) ^ ($x & $z) ^ ($y & $z),
+            40..=59 => $crate::utils::macros::majority!($x, $y, $z),
             60..=79 => $x ^ $y ^ $z,
 
             _ => 0, // should be unreachable
@@ -53,7 +53,7 @@ fn sha1_core_digest_block(state: &mut [u32; 5], block: &[u8; BLOCK_SIZE_BYTE]) {
             .rotate_left(5)
             .wrapping_add(sha1_functions!(b, c, d, t))
             .wrapping_add(e)
-            .wrapping_add(K[t / 20])
+            .wrapping_add(K_CONSTANTS[t / 20])
             .wrapping_add(words[t]);
         e = d;
         d = c;

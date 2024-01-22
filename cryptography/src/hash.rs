@@ -45,3 +45,6 @@ mod hasher;
 
 mod sha1;
 pub use sha1::Sha1;
+
+mod sha2;
+pub use sha2::{Sha224, Sha256};
