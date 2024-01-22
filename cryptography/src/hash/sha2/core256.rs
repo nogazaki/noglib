@@ -104,7 +104,7 @@ fn sha256_core_digest_block(state: &mut [u32; 8], block: &[u8; BLOCK_SIZE_BYTE])
 
 /* -------------------------------------------------------------------------------- */
 
-/// SHA-1 core object
+/// SHA-256 core object
 #[derive(Debug)]
 pub struct Sha256Core {
     /// Current state of this hashing instance
@@ -132,6 +132,7 @@ impl HasherCore for Sha256Core {
             SHA256_DIGEST_SIZE_BIT => [
                 0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
             ],
+
             _ => Default::default(),
         };
 
