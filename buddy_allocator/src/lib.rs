@@ -3,9 +3,7 @@
 #![no_std]
 
 use core::alloc::Layout;
-use core::marker::PhantomData;
-use core::mem::size_of;
-use core::ptr::NonNull;
+use core::{cell::UnsafeCell, marker::PhantomData, mem::size_of, ptr::NonNull};
 
 mod header;
 use header::BlockHeader;
@@ -22,9 +20,10 @@ const BASE_ORDER: usize = MIN_BLOCK_SIZE.trailing_zeros() as usize;
 /// Create a heap and add a memory region to it:
 /// ```
 /// use buddy_allocator::*;
+/// use core::cell::UnsafeCell;
 ///
 /// let mut allocator = Allocator::<5>::new();
-/// let pool = [0u8; 256];
+/// let pool = UnsafeCell::new([0u8; 256]);
 /// let added_memory_size = unsafe { allocator.add_memory(&pool) };
 /// ```
 #[derive(Debug)]
@@ -36,7 +35,7 @@ pub struct Allocator<'a, const ORDERS: usize> {
     /// Phantom data, keeping memory pools added to this allocator valid
     _pd: PhantomData<&'a [u8]>,
 }
-impl<const ORDERS: usize> Allocator<'_, ORDERS> {
+impl<'a, const ORDERS: usize> Allocator<'a, ORDERS> {
     /// Maximum block size allocatable, accessible with type
     pub const MAX_BLOCK_SIZE: usize = 1 << (ORDERS + BASE_ORDER - 1);
 
@@ -57,14 +56,11 @@ impl<const ORDERS: usize> Allocator<'_, ORDERS> {
     /// Add a memory pool to the heap of this allocator
     ///
     /// # Safety
-    /// This method takes ownership of `pool`, so it should not be used again, at least until the allocator was dropped.
-    ///
-    /// # Note
-    /// `pool` is not required to be mutable to help prevent write access in its scope,
-    /// but would definitely be modified by the allocator.
-    pub unsafe fn add_memory(&mut self, pool: &'_ [u8]) -> usize {
-        let mut start = pool.as_ptr() as usize;
-        let mut end = start + pool.len();
+    /// The caller must ensure that there is no reference that
+    /// point to the contents of the `UnsafeCell`.
+    pub unsafe fn add_memory(&mut self, pool: &'a UnsafeCell<[u8]>) -> usize {
+        let mut start = pool.get() as *mut u8 as usize;
+        let mut end = start + (*pool.get()).len();
 
         // Ensure alignment
         start = (start + MIN_BLOCK_SIZE - 1) & (!MIN_BLOCK_SIZE + 1);
@@ -160,10 +156,11 @@ impl<const ORDERS: usize> Allocator<'_, ORDERS> {
     }
 }
 
+/// TODO: too many transmute, any other approach ???
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core::mem::{align_of, size_of_val};
+    use core::mem::{align_of, size_of_val, transmute};
     use core::slice::from_raw_parts;
 
     // Ensure that a byte array is align to this size, which enables it to be added to the heap as a full block
@@ -177,30 +174,25 @@ mod tests {
     #[allow(clippy::shadow_unrelated)]
     fn test_add_memory() {
         let aligned_pool = [Aligned(0); 2];
-        let pool = unsafe {
-            from_raw_parts(
-                &aligned_pool as *const _ as *const u8,
-                size_of_val(&aligned_pool),
-            )
-        };
+        let pool = unsafe { from_raw_parts(&aligned_pool as *const _ as *const u8, size_of_val(&aligned_pool)) };
 
         let mut allocator = Allocator::<ORDERS>::new();
         // Smaller than smallest pool that can be added
-        let added = unsafe { allocator.add_memory(&pool[..MIN_BLOCK_SIZE - 1]) };
+        let added = unsafe { allocator.add_memory(transmute(&pool[..MIN_BLOCK_SIZE - 1])) };
         assert_eq!(added, 0);
         // Smallest pool that can be added
-        let added = unsafe { allocator.add_memory(&pool[..MIN_BLOCK_SIZE]) };
+        let added = unsafe { allocator.add_memory(transmute(&pool[..MIN_BLOCK_SIZE])) };
         assert_eq!(added, MIN_BLOCK_SIZE);
 
         let mut allocator = Allocator::<ORDERS>::new();
         // Add biggest blocks
-        let added = unsafe { allocator.add_memory(pool) };
+        let added = unsafe { allocator.add_memory(transmute(pool)) };
         assert_eq!(added, pool.len());
 
         const ALL_BLOCKS_POOL_SIZE: usize = MIN_BLOCK_SIZE * ((2 << (ORDERS - 1)) - 1);
         let mut allocator = Allocator::<ORDERS>::new();
         // Add all block sizes
-        let added = unsafe { allocator.add_memory(&pool[..ALL_BLOCKS_POOL_SIZE]) };
+        let added = unsafe { allocator.add_memory(transmute(&pool[..ALL_BLOCKS_POOL_SIZE])) };
         assert_eq!(added, ALL_BLOCKS_POOL_SIZE);
     }
 
@@ -208,16 +200,11 @@ mod tests {
     #[allow(clippy::shadow_unrelated)]
     fn test_memory_allocation() {
         let aligned_pool = Aligned(0);
-        let pool = unsafe {
-            from_raw_parts(
-                &aligned_pool as *const _ as *const u8,
-                size_of_val(&aligned_pool),
-            )
-        };
+        let pool = unsafe { from_raw_parts(&aligned_pool as *const _ as *const u8, size_of_val(&aligned_pool)) };
 
         let mut allocator = Allocator::<ORDERS>::new();
         // Add one biggest block
-        let added = unsafe { allocator.add_memory(pool) };
+        let added = unsafe { allocator.add_memory(transmute(pool)) };
         assert_eq!(added, allocator.get_max_block_size());
 
         // Request 1 bytes, which will allocate `MIN_LEAF_SIZE` bytes
