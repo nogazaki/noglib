@@ -166,6 +166,7 @@ mod tests {
     // Ensure that a byte array is align to this size, which enables it to be added to the heap as a full block
     #[repr(align(256))]
     #[derive(Clone, Copy)]
+    #[allow(dead_code)]
     struct Aligned(u8);
 
     const ORDERS: usize = align_of::<Aligned>().trailing_zeros() as usize - BASE_ORDER + 1;
