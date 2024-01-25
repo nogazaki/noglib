@@ -41,25 +41,25 @@ where
         *self = Self::new();
     }
 
-    fn update(mut self, data: &(impl AsRef<[u8]> + ?Sized)) -> Self {
-        self.core.compress(data.as_ref());
+    fn update(mut self, data: &[u8]) -> Self {
+        self.core.compress(data);
         self
     }
-    fn update_in_place(&mut self, data: &(impl AsRef<[u8]> + ?Sized)) {
-        self.core.compress(data.as_ref());
+    fn update_in_place(&mut self, data: &[u8]) {
+        self.core.compress(data);
     }
 
     fn digest(mut self) -> [u8; Self::DIGEST_SIZE] {
         let full_digest = self.core.finalize();
         full_digest[..Self::DIGEST_SIZE].try_into().unwrap()
     }
-    fn digest_into(mut self, out: &mut impl AsMut<[u8]>) -> Result<(), InsufficientMemoryError> {
-        if out.as_mut().len() < Self::DIGEST_SIZE {
+    fn digest_into(mut self, out: &mut [u8]) -> Result<(), InsufficientMemoryError> {
+        if out.len() < Self::DIGEST_SIZE {
             return Err(InsufficientMemoryError {});
         }
 
         let full_digest = self.core.finalize();
-        out.as_mut()[..Self::DIGEST_SIZE].copy_from_slice(&full_digest[..Self::DIGEST_SIZE]);
+        out[..Self::DIGEST_SIZE].copy_from_slice(&full_digest[..Self::DIGEST_SIZE]);
 
         Ok(())
     }
@@ -69,14 +69,14 @@ where
 
         full_digest[..Self::DIGEST_SIZE].try_into().unwrap()
     }
-    fn digest_into_reset(&mut self, out: &mut impl AsMut<[u8]>) -> Result<(), InsufficientMemoryError> {
-        if out.as_mut().len() < Self::DIGEST_SIZE {
+    fn digest_into_reset(&mut self, out: &mut [u8]) -> Result<(), InsufficientMemoryError> {
+        if out.len() < Self::DIGEST_SIZE {
             return Err(InsufficientMemoryError {});
         }
 
         let full_digest = self.core.finalize();
         self.reset();
-        out.as_mut()[..Self::DIGEST_SIZE].copy_from_slice(&full_digest[..Self::DIGEST_SIZE]);
+        out[..Self::DIGEST_SIZE].copy_from_slice(&full_digest[..Self::DIGEST_SIZE]);
 
         Ok(())
     }

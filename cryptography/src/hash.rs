@@ -19,9 +19,9 @@ pub trait Digest: DigestUser {
 
     /// Update this instance using `data`, chain-able
     #[must_use]
-    fn update(self, data: &(impl AsRef<[u8]> + ?Sized)) -> Self;
+    fn update(self, data: &[u8]) -> Self;
     /// Update this instance in-place using `data`
-    fn update_in_place(&mut self, data: &(impl AsRef<[u8]> + ?Sized));
+    fn update_in_place(&mut self, data: &[u8]);
 
     /// Finalize and return digest, consume this instance
     fn digest(self) -> [u8; Self::DIGEST_SIZE];
@@ -29,14 +29,14 @@ pub trait Digest: DigestUser {
     ///
     /// # Errors
     /// - `InsufficientMemoryError` when `out` is not large enough to hold the digest
-    fn digest_into(self, out: &mut impl AsMut<[u8]>) -> Result<(), InsufficientMemoryError>;
+    fn digest_into(self, out: &mut [u8]) -> Result<(), InsufficientMemoryError>;
     /// Finalize and return digest, reset this instance
     fn digest_reset(&mut self) -> [u8; Self::DIGEST_SIZE];
     /// Finalize digest into provided buffer, reset this instance
     ///
     /// # Errors
     /// - `InsufficientMemoryError` when `out` is not large enough to hold the digest
-    fn digest_into_reset(&mut self, out: &mut impl AsMut<[u8]>) -> Result<(), InsufficientMemoryError>;
+    fn digest_into_reset(&mut self, out: &mut [u8]) -> Result<(), InsufficientMemoryError>;
 }
 
 /* -------------------------------------------------------------------------------- */
