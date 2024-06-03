@@ -3,6 +3,11 @@ name = "buddy_allocator"
 version = "0.1.0"
 edition = "2021"
 
+
+[dependencies]
+spin = "0.9.8"
+
+
 [lints.rust]
 keyword_idents = "warn"
 non_ascii_idents = "warn"
