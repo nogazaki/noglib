@@ -1,7 +1,6 @@
 //! A naive implementation of the buddy memory allocator
 
 #![no_std]
-#![feature(allocator_api)]
 
 use core::alloc::Layout;
 use core::{
@@ -183,21 +182,12 @@ impl<const ORDERS: usize> Default for BuddyAllocator<'_, ORDERS> {
     }
 }
 
+unsafe impl<const ORDERS: usize> Sync for BuddyAllocator<'static, ORDERS> {}
+
 /* -------------------------------------------------------------------------------- */
 
 extern crate alloc;
-use alloc::alloc::{Allocator, GlobalAlloc};
-use core::alloc::AllocError;
-
-unsafe impl<const ORDERS: usize> Allocator for BuddyAllocator<'_, ORDERS> {
-    fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
-        unsafe { self.get_memory(layout).ok_or(AllocError {}) }
-    }
-
-    unsafe fn deallocate(&self, ptr: NonNull<u8>, layout: Layout) {
-        unsafe { self.return_memory(ptr, layout) }
-    }
-}
+use alloc::alloc::GlobalAlloc;
 
 unsafe impl<const ORDERS: usize> GlobalAlloc for BuddyAllocator<'static, ORDERS> {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
@@ -211,4 +201,15 @@ unsafe impl<const ORDERS: usize> GlobalAlloc for BuddyAllocator<'static, ORDERS>
     }
 }
 
-unsafe impl<const ORDERS: usize> Sync for BuddyAllocator<'static, ORDERS> {}
+// use alloc::alloc::Allocator;
+// use core::alloc::AllocError;
+
+// unsafe impl<const ORDERS: usize> Allocator for BuddyAllocator<'_, ORDERS> {
+//     fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
+//         unsafe { self.get_memory(layout).ok_or(AllocError {}) }
+//     }
+
+//     unsafe fn deallocate(&self, ptr: NonNull<u8>, layout: Layout) {
+//         unsafe { self.return_memory(ptr, layout) }
+//     }
+// }

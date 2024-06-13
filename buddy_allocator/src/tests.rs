@@ -58,7 +58,7 @@ fn test_memory_allocation() {
         ));
     }
     // No more memory to allocate
-    assert!(allocator.allocate(layout).is_err());
+    unsafe { assert!(allocator.get_memory(layout).is_none()) };
 
     // Deallocate every requested block
     for offset in (0..pool_size).step_by(MIN_BLOCK_SIZE) {
@@ -71,5 +71,5 @@ fn test_memory_allocation() {
     let result = unsafe { allocator.get_memory(layout) };
     assert!(result.is_some_and(|ptr| (ptr.as_ptr() as *mut u8 == pool_addr) && (ptr.len() == layout.size())));
     // No more memory to allocate
-    assert!(allocator.allocate(layout).is_err());
+    unsafe { assert!(allocator.get_memory(layout).is_none()) };
 }
